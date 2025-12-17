@@ -179,10 +179,6 @@ local function trace_explode(pos, strength, raydirs, radius, info, direct, sourc
 	local ystride = (emax.x - emin_x + 1)
 	local zstride = ystride * (emax.y - emin_y + 1)
 
-	--[[local area = VoxelArea:new {
-		MinEdge = emin,
-		MaxEdge = emax
-	}]]
 	local data = vm:get_data()
 	local destroy = {}
 
@@ -229,7 +225,7 @@ local function trace_explode(pos, strength, raydirs, radius, info, direct, sourc
 				end
 
 				if cid ~= minetest.CONTENT_AIR then
-					if not minetest.is_protected(npos, "") or grief_protected then
+					if grief_protected or not minetest.is_protected(npos, "") then
 						destroy[hash] = idx
 					end
 				end
@@ -241,21 +237,19 @@ local function trace_explode(pos, strength, raydirs, radius, info, direct, sourc
 	local punch_radius = 2 * strength
 	local objs = get_objects_inside_radius(pos, punch_radius)
 
-	-- Trace rays for entity damage
-	for _, obj in pairs(objs) do
+	--- @param obj core.ObjectRef
+	local function trace_explosion_ray(obj)
+		if obj == source or obj == direct then
+			-- Don't apply explosion damage to the causer itself
+			return
+		end
+
 		local ent = obj:get_luaentity()
 
 		-- Ignore items to lower lag
 		if (obj:is_player() or (ent and ent.name ~= "__builtin.item")) and obj:get_hp() > 0 then
 			local opos = obj:get_pos()
-			local collisionbox = nil
-
-			if obj:is_player() then
-				collisionbox = { -0.3, 0.0, -0.3, 0.3, 1.77, 0.3 }
-			elseif ent.name then
-				local def = minetest.registered_entities[ent.name]
-				collisionbox = def.collisionbox
-			end
+			local collisionbox = obj:get_properties().collisionbox
 
 			if collisionbox then
 				-- Create rays from random points in the collision box
@@ -323,6 +317,7 @@ local function trace_explode(pos, strength, raydirs, radius, info, direct, sourc
 
 				local sleep_formspec_doesnt_close_mt53 = false
 				if obj:is_player() then
+					--- @cast obj core.PlayerRef
 					local name = obj:get_player_name()
 					if mcl_beds then
 						local meta = obj:get_meta()
@@ -369,6 +364,11 @@ local function trace_explode(pos, strength, raydirs, radius, info, direct, sourc
 				ent.object:remove() -- Node exploded the end crystal, remove it.
 			end
 		end
+	end
+
+	-- Trace rays for entity damage
+	for _, obj in pairs(objs) do
+		trace_explosion_ray(obj)
 	end
 
 	local airs, fires = {}, {}

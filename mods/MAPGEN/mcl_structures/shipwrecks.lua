@@ -103,7 +103,7 @@ mcl_structures.register_structure("shipwreck",{
 				stacks_min = 3,
 				stacks_max = 10,
 				items = {
-					{ itemstring = "mcl_sus_stew:stew", weight = 10, amount_min = 1, amount_max = 1 },
+					{ itemstring = "vl_sus_stew:stew", weight = 10, amount_min = 1, amount_max = 1 },
 					{ itemstring = "mcl_core:paper", weight = 8, amount_min = 1, amount_max = 12 },
 					{ itemstring = "mcl_farming:wheat_item", weight = 7, amount_min = 8, amount_max = 21 },
 					{ itemstring = "mcl_farming:carrot_item", weight = 7, amount_min = 4, amount_max = 8 },
@@ -118,7 +118,7 @@ mcl_structures.register_structure("shipwreck",{
 					{ itemstring = "mcl_armor:chestplate_leather_enchanted", weight = 3, func = function(stack, pr)
 							mcl_enchanting.enchant_uniform_randomly(stack, {"soul_speed"}) end },
 					{ itemstring = "mcl_armor:leggings_leather_enchanted", weight = 3, func = function(stack, pr)
-							mcl_enchanting.enchant_uniform_randomly(stack, {"soul_speed"}) end },
+							mcl_enchanting.enchant_uniform_randomly(stack, {"soul_speed", "swift_sneak"}) end },
 					{ itemstring = "mcl_armor:boots_leather_enchanted", weight = 3, func = function(stack, pr)
 							mcl_enchanting.enchant_uniform_randomly(stack, {"soul_speed"}) end },
 					{ itemstring = "mcl_bamboo:bamboo", weight = 2, amount_min = 1, amount_max = 3 },

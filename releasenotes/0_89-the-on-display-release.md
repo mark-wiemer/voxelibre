@@ -118,3 +118,31 @@ Bone control code, which had workarounds incompatible with 5.11+ Luanti versions
 * Fixed an infinite loop causing a rare freeze – by kno10
 * Fixed item aliases being registered after game start – by teknomunk
 * Made zombie hitbox slightly taller (allows some mob spawning filters) – by Nicu
+
+## 0.89.2 hotfix
+* Made flowers buildable to – rudzik8
+* Fixed some logged warnings – by teknomunk
+* Fixed bitmask meaning – by kno10
+* Copy potion legacy shim item defs properly – by teknomunk
+* Removed a nonexistant item from loot lists – by kno10
+* Forced saving minecart inventories in some cases – by teknomunk
+* Fixed node interaction (including a duplication bug) – by teknomunk
+* Fixed weather particles – by teknomunk
+* Fixed exposed bedrock bug – by kno10
+* Offset most structures y+1 – by kno10
+* Prevent teleportation into void – by Herowl
+* Fixed crash related to cartography table – by teknomunk
+* Fixed a mapgen crash on 5.9 – by teknomunk
+* Fixed a rare kelp related crash – by teknomunk
+* Fixed a snowman related crash – by teknomunk
+* Fixed a boss related crash – by kno10
+
+## 0.89.3 patch
+* Fixed infested blocks not using spawning API properly – by teknomunk
+* Fixed XP magnet malfunctioning – by teknomunk
+* Fixed one letter signs not working – by kno10
+* Fixed undefined variable regression – by teknomunk
+* Fixed a few bugs in cartography table interface, including a crash – by teknomunk and Herowl
+
+## 0.89.4 hotfix
+* Fixed a crash occuring with new Luanti 5.12.0 release – by teknomunk

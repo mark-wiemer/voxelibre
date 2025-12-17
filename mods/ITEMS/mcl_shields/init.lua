@@ -276,7 +276,8 @@ end
 
 local function handle_blocking(player)
 	local player_shield = mcl_shields.players[player]
-	local rmb = player:get_player_control().RMB
+	local ctrl = player:get_player_control()
+	local rmb = ctrl.place or ctrl.zoom
 	if not rmb then
 		player_shield.blocking = 0
 		return
@@ -434,9 +435,11 @@ minetest.register_globalstep(function(dtime)
 	end
 end)
 
+local keep_inventory = vl_tuning.setting("gamerule:keepInventory")
+assert(keep_inventory)
 minetest.register_on_dieplayer(function(player)
 	remove_shield_hud(player)
-	if not minetest.settings:get_bool("mcl_keepInventory") then
+	if not keep_inventory.getter() then
 		remove_shield_entity(player, 1)
 		remove_shield_entity(player, 2)
 	end

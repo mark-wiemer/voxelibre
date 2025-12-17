@@ -25,7 +25,7 @@ function on_collide(self, pos, node)
 		mcl_target.hit(vector.round(pos), 0.4) --4 redstone ticks
 	end
 
-	if node.name == "ignore" then
+	if node.name == "ignore" or mcl_worlds.is_in_void(pos) then
 		-- FIXME: This also means the player loses an ender pearl for throwing into unloaded areas
 		return
 	end
@@ -101,12 +101,14 @@ end
 
 -- Ender pearl entity
 vl_projectile.register("mcl_throwing:ender_pearl_entity",{
-	physical = true,
+	initial_properties = {
+		physical = true,
+		collisionbox = {-0.1,-0.1,-0.1,0.1,0.1,0.1},
+		pointable = false,
+		visual_size = {x=0.9, y=0.9},
+		textures = {"mcl_throwing_ender_pearl.png"},
+	},
 	timer=0,
-	textures = {"mcl_throwing_ender_pearl.png"},
-	visual_size = {x=0.9, y=0.9},
-	collisionbox = {-0.1,-0.1,-0.1,0.1,0.1,0.1},
-	pointable = false,
 
 	get_staticdata = mcl_throwing.get_staticdata,
 	on_activate = mcl_throwing.on_activate,
@@ -122,6 +124,7 @@ vl_projectile.register("mcl_throwing:ender_pearl_entity",{
 			"mcl_core:vine", "mcl_core:deadbush",
 			"group:flower", "group:sapling",
 			"group:plant", "group:mushroom",
+			"mcl_portals:portal_gateway",
 		},
 		allow_punching = function(self, _, _, object)
 			if self.timer < 1 and self._owner == mcl_util.get_entity_id(object) then return false end

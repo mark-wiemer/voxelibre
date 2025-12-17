@@ -36,15 +36,11 @@ images of possible orientations, causing problems with pillar shadings.
 ]]
 function mcl_util.rotate_axis_and_place(itemstack, placer, pointed_thing, infinitestacks, invert_wall)
 	local unode = core.get_node_or_nil(pointed_thing.under)
-	if not unode then
-		return
-	end
-	local undef = core.registered_nodes[unode.name]
-	if undef and undef.on_rightclick and not invert_wall then
-		undef.on_rightclick(pointed_thing.under, unode, placer,
-			itemstack, pointed_thing)
-		return
-	end
+	if not unode then return end
+
+	local new_itemstack, called = mcl_util.handle_node_rightclick(itemstack, placer, pointed_thing)
+	if called then return new_itemstack end
+
 	local wield_name = itemstack:get_name()
 
 	local above = pointed_thing.above
@@ -57,6 +53,7 @@ function mcl_util.rotate_axis_and_place(itemstack, placer, pointed_thing, infini
 	local pos = pointed_thing.above
 	local node = anode
 
+	local undef = core.registered_nodes[unode.name]
 	if undef and undef.buildable_to then
 		pos = pointed_thing.under
 		node = unode
@@ -91,10 +88,9 @@ end
 -- Wrapper of above function for use as `on_place` callback (Recommended).
 -- Similar to core.rotate_node.
 function mcl_util.rotate_axis(itemstack, placer, pointed_thing)
-	mcl_util.rotate_axis_and_place(itemstack, placer, pointed_thing,
+	return mcl_util.rotate_axis_and_place(itemstack, placer, pointed_thing,
 		core.is_creative_enabled(placer:get_player_name()),
 		placer:get_player_control().sneak)
-	return itemstack
 end
 
 -- Returns position of the neighbor of a double chest node
@@ -401,14 +397,33 @@ function mcl_util.bypass_buildable_to(func)
 	end
 end
 
-local DEFAULT_PALETTE_INDEXES = {grass_palette_index = 0, foliage_palette_index = 0, water_palette_index = 0}
+---@class mcl_util.PaletteIndices
+---@field grass_palette_index integer
+---@field foliage_palette_index integer
+---@field water_palette_index integer
+
+---@type mcl_util.PaletteIndices
+local DEFAULT_PALETTE_INDEXES = {
+	grass_palette_index = 0,
+	foliage_palette_index = 0,
+	water_palette_index = 0
+}
+
+---@param pos Vector
+---@return mcl_util.PaletteIndices
 function mcl_util.get_palette_indexes_from_pos(pos)
 	local biome_data = core.get_biome_data(pos)
+	if not biome_data then
+		return DEFAULT_PALETTE_INDEXES
+	end
 	local biome = biome_data.biome
 	local biome_name = core.get_biome_name(biome)
 	local reg_biome = core.registered_biomes[biome_name]
-	if reg_biome and reg_biome._mcl_grass_palette_index and reg_biome._mcl_foliage_palette_index
-	and reg_biome._mcl_water_palette_index then
+	if reg_biome
+		and reg_biome._mcl_grass_palette_index 
+		and reg_biome._mcl_foliage_palette_index
+		and reg_biome._mcl_water_palette_index
+	then
 		return {
 			grass_palette_index = reg_biome._mcl_grass_palette_index,
 			foliage_palette_index = reg_biome._mcl_foliage_palette_index,
@@ -419,6 +434,7 @@ function mcl_util.get_palette_indexes_from_pos(pos)
 	end
 end
 
+---@param pos Vector
 function mcl_util.get_colorwallmounted_rotation(pos)
 	local colorwallmounted_node = core.get_node(pos)
 	for i = 0, 32, 1 do

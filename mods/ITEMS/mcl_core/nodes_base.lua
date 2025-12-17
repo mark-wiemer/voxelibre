@@ -6,10 +6,9 @@ local translucent_ice = minetest.settings:get_bool("mcl_translucent_ice", false)
 local ice_drawtype, ice_texture_alpha
 if translucent_ice then
 	ice_drawtype = "glasslike"
-	ice_texture_alpha = minetest.features.use_texture_alpha_string_modes and "blend" or true
+	ice_texture_alpha = "blend"
 else
 	ice_drawtype = "normal"
-	ice_texture_alpha = minetest.features.use_texture_alpha_string_modes and "opaque" or false
 end
 
 mcl_core.fortune_drop_ore = {
@@ -410,7 +409,6 @@ minetest.register_node("mcl_core:grass_path", {
 	_doc_items_longdesc = S("Grass paths are a decorative variant of grass blocks. Their top has a different color and they are a bit lower than grass blocks, making them useful to build footpaths. Grass paths can be created by right clicking with a shovel. A grass path turns into dirt when it is below a solid block or when shift+right clicked with a shovel."),
 	drop = "mcl_core:dirt",
 	is_ground_content = true,
-	use_texture_alpha = minetest.features.use_texture_alpha_string_modes and "opaque" or false,
 	drawtype = "nodebox",
 	paramtype = "light",
 	node_box = {
@@ -420,6 +418,7 @@ minetest.register_node("mcl_core:grass_path", {
 			{-0.5, -0.5, -0.5, 0.5, 0.4375, 0.5},
 		}
 	},
+	use_texture_alpha = "clip",
 	groups = {handy=1,shovely=1, cultivatable=2, dirtifies_below_solid=1, dirtifier=1, deco_block=1, path_remove_possible=1 },
 	sounds = mcl_sounds.node_sound_dirt_defaults({
 		footstep = {name="default_grass_footstep", gain=0.1},
@@ -844,6 +843,18 @@ minetest.register_node("mcl_core:goldblock", {
 	description = S("Block of Gold"),
 	_doc_items_longdesc = S("A block of gold is mostly a shiny decorative block but also useful as a compact storage of gold ingots."),
 	tiles = {"default_gold_block.png"},
+	is_ground_content = false,
+	stack_max = 64,
+	groups = {pickaxey=4, building_block=1},
+	sounds = mcl_sounds.node_sound_metal_defaults(),
+	_mcl_blast_resistance = 6,
+	_mcl_hardness = 3,
+})
+
+minetest.register_node("mcl_core:goldblock_polished", {
+	description = S("Polished Block of Gold"),
+	_doc_items_longdesc = S("A polished block of gold is mostly a shiny decorative block but also useful as a compact storage of gold ingots."),
+	tiles = {"mcl_gold_block_polished.png"},
 	is_ground_content = false,
 	stack_max = 64,
 	groups = {pickaxey=4, building_block=1},

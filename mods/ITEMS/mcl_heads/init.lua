@@ -41,7 +41,6 @@ mcl_heads.deftemplate_floor = {
 		deco_block = 1,
 		dig_by_piston = 1,
 	},
-	use_texture_alpha = minetest.features.use_texture_alpha_string_modes and "opaque" or false,
 	paramtype = "light",
 	paramtype2 = "degrotate",
 	stack_max = 64,
@@ -127,7 +126,6 @@ mcl_heads.deftemplate_wall = {
 		dig_by_piston = 1,
 		not_in_creative_inventory = 1,
 	},
-	use_texture_alpha = minetest.features.use_texture_alpha_string_modes and "opaque" or false,
 	paramtype = "light",
 	paramtype2 = "wallmounted",
 	stack_max = 64,
@@ -173,6 +171,7 @@ function mcl_heads.register_head(head_def)
 		_doc_items_longdesc = head_def.longdesc,
 
 		tiles = { head_def.texture },
+		use_texture_alpha = "clip",
 
 		_mcl_armor_mob_range_mob = head_def.range_mob,
 		_mcl_armor_mob_range_factor = head_def.range_factor,
@@ -193,6 +192,7 @@ function mcl_heads.register_head(head_def)
 			-- This is required for skeleton skull and wither skeleton skull.
 			{ name = "([combine:16x16:-36,0=" ..head_def.texture ..")^([combine:16x16:-44,8=" ..head_def.texture..")", align_style = "node" }, -- bottom
 		},
+		use_texture_alpha = "clip",
 		drop = name,
 	}))
 end

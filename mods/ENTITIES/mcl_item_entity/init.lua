@@ -58,7 +58,7 @@ function mcl_item_entity.register_pickup_achievement(itemname, award)
 end
 
 mcl_item_entity.register_pickup_achievement("tree", "mcl:mineWood")
-mcl_item_entity.register_pickup_achievement("mcl_mobitems:blaze_rod", "mcl:blazeRod")
+mcl_item_entity.register_pickup_achievement("mcl_mobitems:flaming_rod", "mcl:flaming_rod")
 mcl_item_entity.register_pickup_achievement("mcl_mobitems:leather", "mcl:killCow")
 mcl_item_entity.register_pickup_achievement("mcl_core:diamond", "mcl:diamonds")
 mcl_item_entity.register_pickup_achievement("mcl_core:crying_obsidian", "mcl:whosCuttingOnions")
@@ -161,6 +161,12 @@ local function try_object_pickup(player, inv, object, checkpos)
 	end
 end
 
+---@class core.LuaEntity
+---@field _magnet_distance number
+---@field collector string
+---@field collected boolean
+---@field age number
+
 minetest.register_globalstep(function(_)
 	tick = not tick
 
@@ -191,15 +197,20 @@ minetest.register_globalstep(function(_)
 
 			--magnet and collection
 			for _, object in pairs(minetest.get_objects_inside_radius(checkpos, item_drop_settings.xp_radius_magnet)) do
-				if not object:is_player() and vector.distance(checkpos, object:get_pos()) < item_drop_settings.radius_magnet and
+				local distance = vector.distance(checkpos, object:get_pos())
+				if not object:is_player() and distance < item_drop_settings.radius_magnet and
 					object:get_luaentity() and object:get_luaentity().name == "__builtin:item" and object:get_luaentity()._magnet_timer
 					and (object:get_luaentity()._insta_collect or (object:get_luaentity().age > item_drop_settings.age)) then
 
 					try_object_pickup( player, inv, object, checkpos )
 				elseif not object:is_player() and object:get_luaentity() and object:get_luaentity().name == "mcl_experience:orb" then
 					local entity = object:get_luaentity()
-					entity.collector = player:get_player_name()
-					entity.collected = true
+					local magnet_distance = entity._magnet_distance
+					if not magnet_distance or distance < magnet_distance then
+						entity.collector = player:get_player_name()
+						entity.collected = true
+						entity._magnet_distance = distance
+					end
 				end
 			end
 
@@ -207,12 +218,95 @@ minetest.register_globalstep(function(_)
 	end
 end)
 
--- Stupid workaround to get drops from a drop table:
--- Create a temporary table in minetest.registered_nodes that contains the proper drops,
--- because unfortunately minetest.get_node_drops needs the drop table to be inside a registered node definition
--- (very ugly)
+-- BEGIN Copied from luanti/builtin/game/item.lua, then patched
+local function has_all_groups(tbl, required_groups)
+	if type(required_groups) == "string" then
+		return (tbl[required_groups] or 0) ~= 0
+	end
+	for _, group in ipairs(required_groups) do
+		if (tbl[group] or 0) == 0 then
+			return false
+		end
+	end
+	return true
+end
+function get_node_drops(drop, param2, ptype, toolname)
+	local palette_index = core.strip_param2_color(param2, ptype)
 
-local tmp_id = 0
+	if drop == nil then
+		return {}
+	elseif type(drop) == "string" then
+		-- itemstring drop
+		return drop ~= "" and {drop} or {}
+	elseif drop.items == nil then
+		-- drop = {} to disable default drop
+		return {}
+	end
+
+	-- Extended drop table
+	local got_items = {}
+	local got_count = 0
+	for _, item in ipairs(drop.items) do
+		local good_rarity = true
+		local good_tool = true
+		if item.rarity ~= nil then
+			good_rarity = item.rarity < 1 or math.random(item.rarity) == 1
+		end
+		if item.tools ~= nil or item.tool_groups ~= nil then
+			good_tool = false
+		end
+		if item.tools ~= nil and toolname then
+			for _, tool in ipairs(item.tools) do
+				if tool:sub(1, 1) == '~' then
+					good_tool = toolname:find(tool:sub(2)) ~= nil
+				else
+					good_tool = toolname == tool
+				end
+				if good_tool then
+					break
+				end
+			end
+		end
+		if item.tool_groups ~= nil and toolname then
+			local tooldef = core.registered_items[toolname]
+			if tooldef ~= nil and type(tooldef.groups) == "table" then
+				if type(item.tool_groups) == "string" then
+					-- tool_groups can be a string which specifies the required group
+					good_tool = core.get_item_group(toolname, item.tool_groups) ~= 0
+				else
+					-- tool_groups can be a list of sufficient requirements.
+					-- i.e. if any item in the list can be satisfied then the tool is good
+					assert(type(item.tool_groups) == "table")
+					for _, required_groups in ipairs(item.tool_groups) do
+						-- required_groups can be either a string (a single group),
+						-- or an array of strings where all must be in tooldef.groups
+						good_tool = has_all_groups(tooldef.groups, required_groups)
+						if good_tool then
+							break
+						end
+					end
+				end
+			end
+		end
+		if good_rarity and good_tool then
+			got_count = got_count + 1
+			for _, add_item in ipairs(item.items) do
+				-- add color, if necessary
+				if item.inherit_color and palette_index then
+					local stack = ItemStack(add_item)
+					stack:get_meta():set_int("palette_index", palette_index)
+					add_item = stack:to_string()
+				end
+				got_items[#got_items+1] = add_item
+			end
+			if drop.max_items ~= nil and got_count == drop.max_items then
+				break
+			end
+		end
+	end
+	return got_items
+end
+-- END Copied from luanti/builtin/game/item.lua, then patched
 
 ---@param drop string|drop_definition
 ---@param toolname string
@@ -220,16 +314,7 @@ local tmp_id = 0
 ---@param paramtype2 paramtype2
 ---@return string[]
 local function get_drops(drop, toolname, param2, paramtype2)
-	tmp_id = tmp_id + 1
-	local tmp_node_name = "mcl_item_entity:" .. tmp_id
-	minetest.registered_nodes[tmp_node_name] = {
-		name = tmp_node_name,
-		drop = drop,
-		paramtype2 = paramtype2
-	}
-	local drops = minetest.get_node_drops({ name = tmp_node_name, param2 = param2 }, toolname)
-	minetest.registered_nodes[tmp_node_name] = nil
-	return drops
+	return get_node_drops(drop, param2, paramtype2, toolname)
 end
 
 local function discrete_uniform_distribution(drops, min_count, max_count, cap)
@@ -903,6 +988,11 @@ minetest.register_entity(":__builtin:item", {
 		else
 			self.itemstring = staticdata
 		end
+
+		local itemstack = ItemStack(self.itemstring)
+		vl_legacy.convert_itemstack(itemstack)
+		self.itemstring = itemstack:to_string()
+
 		if self._removed then
 			self._removed = true
 			self.object:remove()

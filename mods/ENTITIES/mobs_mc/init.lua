@@ -62,6 +62,7 @@ mobs_mc.make_owner_teleport_function = function(dist, teleport_check_interval)
 							trybelownode and trybelownode.walkable then
 						-- Correct position found! Let's teleport.
 						self.object:set_pos(telepos)
+						self.old_y = telepos.y -- mcl_mobs uses this variable for fall damage. This disables it while teleporting
 						return
 					end
 				end
@@ -123,7 +124,7 @@ dofile(path .. "/villager_zombie.lua") -- Mesh and animation by toby109tt  / htt
 dofile(path .. "/witch.lua") -- Mesh and animation by toby109tt  / https://github.com/22i
 
 --Monsters
-dofile(path .. "/blaze.lua") -- Animation by daufinsyd
+dofile(path .. "/elementals.lua") -- Animation by daufinsyd
 dofile(path .. "/ender_dragon.lua") -- Mesh and animation by toby109tt  / https://github.com/22i
 dofile(path .. "/endermite.lua") -- Mesh and animation by toby109tt  / https://github.com/22i
 dofile(path .. "/villager_illusioner.lua") -- Mesh and animation by toby109tt  / https://github.com/22i

@@ -44,7 +44,7 @@ local textures = {"weather_pack_rain_raindrop_1.png", "weather_pack_rain_raindro
 
 function mcl_weather.has_rain(pos)
 	if not mcl_worlds.has_weather(pos) then return false end
-	if  mgname == "singlenode" or mgname == "v6" then return true end
+	if  mgname == "singlenode" then return true end
 	local bd = minetest.registered_biomes[minetest.get_biome_name(minetest.get_biome_data(pos).biome)]
 	if bd and bd._mcl_biome_type == "hot" then return false end
 	return true
@@ -161,12 +161,9 @@ function mcl_weather.rain.clear()
 	end
 end
 
-minetest.register_globalstep(function(dtime)
-	if mcl_weather.state ~= "rain" then
-		return false
-	end
+function mcl_weather.rain.step(_)
 	mcl_weather.rain.make_weather()
-end)
+end
 
 function mcl_weather.rain.make_weather()
 	if mcl_weather.rain.init_done == false then
@@ -186,9 +183,7 @@ function mcl_weather.rain.make_weather()
 			end
 		else
 			if mcl_weather.has_snow(pos) then
-				mcl_weather.rain.remove_sound(player)
-				mcl_weather.snow.add_player(player)
-				mcl_weather.snow.set_sky_box()
+				mcl_weather.snow.make_weather_for_player(player)
 			else
 				mcl_weather.rain.add_player(player)
 				mcl_weather.rain.add_rain_particles(player)

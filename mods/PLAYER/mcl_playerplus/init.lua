@@ -553,6 +553,16 @@ minetest.register_globalstep(function(dtime)
 			playerphysics.remove_physics_factor(player, "speed", "mcl_playerplus:depth_strider")
 		end
 
+		-- Sneak faster with swift sneak
+		local leggings = player:get_inventory():get_stack("armor", 4)
+		local swift_sneak = mcl_enchanting.get_enchantment(leggings, "swift_sneak")
+		if swift_sneak > 0 then
+			playerphysics.add_physics_factor(player, "speed_crouch", "mcl_playerplus:swift_sneak", (swift_sneak / 2) + 1)
+		else
+			playerphysics.remove_physics_factor(player, "speed_crouch", "mcl_playerplus:swift_sneak")
+		end
+
+
 		-- Is player suffocating inside node? (Only for solid full opaque cube type nodes
 		-- without group disable_suffocation=1)
 		-- if swimming, check the feet node instead, because the head node will be above the player when swimming
@@ -571,17 +581,18 @@ minetest.register_globalstep(function(dtime)
 			mcl_util.deal_damage(player, 1, {type = "in_wall"})
 		end
 
-		-- Am I near a cactus?
+		-- Cactus damage
 		if node_stand == "mcl_core:cactus" or node_feet == "mcl_core:cactus" or node_head == "mcl_core:cactus" then
 			mcl_util.deal_damage(player, 1, {type = "cactus"})
 		else
-			local near = find_node_near(pos, 1, "mcl_core:cactus")
-			if near then
-				-- Am I touching the cactus? If so, it hurts
-				local dist = vector.distance(pos, near)
-				if dist < 1.1 then
-					mcl_util.deal_damage(player, 1, {type = "cactus"})
-				end
+			-- Touching cactus from the side
+			local node_collide_width = 1 - .75 -- FIXME: Player collision box width is defined earlier as .75 - use common variable for this at some point
+			if core.find_nodes_in_area(
+				vector.offset(pos, node_collide_width, 0, node_collide_width),
+				vector.offset(pos, -node_collide_width, 0, -node_collide_width),
+				"mcl_core:cactus"
+			)[1] then
+				mcl_util.deal_damage(player, 1, {type = "cactus"})
 			end
 		end
 
@@ -755,7 +766,8 @@ minetest.register_on_punchplayer(function(player, hitter, time_from_last_punch, 
 		local weapon = hitter:get_wielded_item()
 		local player_pos = player:get_pos()
 		local hitter_pos = hitter:get_pos()
-		if vector.distance(player_pos, hitter_pos) > (weapon:get_definition().range or 3) then
+		-- 0.6 correction factor below is for the difference between player hitbox position and player object origin
+		if (vector.distance(player_pos, hitter_pos) - 0.6) > (weapon:get_definition().range or 3) then
 			damage = 0
 			return damage
 		end
